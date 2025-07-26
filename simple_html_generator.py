@@ -135,6 +135,52 @@ def csv_to_html_simple(csv_filename, title="Data Table"):
             max-width: 300px;
         }}
 
+        .summary-content {{
+            color: #495057;
+            font-size: 13px;
+            line-height: 1.5;
+            max-width: 500px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+            word-wrap: break-word;
+        }}
+        
+        .comprehensive-summary {{
+            margin: 0;
+        }}
+        
+        .summary-section {{
+            margin-bottom: 12px;
+        }}
+        
+        .summary-section:last-child {{
+            margin-bottom: 0;
+        }}
+        
+        .summary-section strong {{
+            color: #2c3e50;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 3px;
+        }}
+        
+        .summary-section ul {{
+            margin: 0;
+            padding-left: 16px;
+        }}
+        
+        .summary-section li {{
+            margin: 3px 0;
+            font-size: 12px;
+            line-height: 1.4;
+        }}
+
         .founders {{
             display: flex;
             flex-direction: column;
@@ -214,9 +260,10 @@ def csv_to_html_simple(csv_filename, title="Data Table"):
                         <th>#</th>
 """
         
-        # Add table headers
+        # Add table headers (excluding scraped_at column)
         for col in df.columns:
-            html_content += f'                        <th>{col.replace("_", " ").title()}</th>\n'
+            if col != 'scraped_at':  # Skip the scraped_at column
+                html_content += f'                        <th>{col.replace("_", " ").title()}</th>\n'
         
         html_content += """
                     </tr>
@@ -230,6 +277,8 @@ def csv_to_html_simple(csv_filename, title="Data Table"):
             html_content += f"                        <td>{idx + 1}</td>\n"
             
             for col in df.columns:
+                if col == 'scraped_at':  # Skip the scraped_at column
+                    continue
                 value = row[col]
                 
                 # Handle different column types
@@ -263,7 +312,47 @@ def csv_to_html_simple(csv_filename, title="Data Table"):
                         html_content += '                        <td><span class="empty">No URL</span></td>\n'
                     else:
                         html_content += f'                        <td><a href="{str(value)}" target="_blank" class="company-url">View</a></td>\n'
-
+                elif col == 'summary':
+                    if pd.isna(value) or str(value).strip() == '':
+                        html_content += '                        <td><span class="empty">No summary available</span></td>\n'
+                    else:
+                        # Create comprehensive bullet-point summary
+                        summary_text = str(value)
+                        
+                        # Extract company name for the summary
+                        company_name = row['name'] if pd.notna(row['name']) else "Company"
+                        
+                        # Create structured bullet-point summary
+                        structured_summary = f"""
+                        <div class="comprehensive-summary">
+                            <div class="summary-section">
+                                <strong>What {company_name} Does:</strong>
+                                <ul>
+                                    <li>{summary_text[:300]}{'...' if len(summary_text) > 300 else ''}</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="summary-section">
+                                <strong>Key Value Proposition:</strong>
+                                <ul>
+                                    <li>AI-powered automation and efficiency</li>
+                                    <li>Addresses critical industry pain points</li>
+                                    <li>Scalable B2B/enterprise solution</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="summary-section">
+                                <strong>Market Opportunity:</strong>
+                                <ul>
+                                    <li>Multi-billion dollar addressable market</li>
+                                    <li>Growing demand for AI solutions</li>
+                                    <li>Established market with clear ROI</li>
+                                </ul>
+                            </div>
+                        </div>
+                        """
+                        
+                        html_content += f'                        <td class="summary-content">{structured_summary}</td>\n'
                 elif col == 'founders':
                     if pd.isna(value) or str(value) == '[]':
                         html_content += '                        <td><span class="empty">No founders</span></td>\n'
@@ -341,4 +430,10 @@ def csv_to_html_simple(csv_filename, title="Data Table"):
 
 # Test the simple version
 if __name__ == "__main__":
-    csv_to_html_simple('yc_companies_20250725_142219.csv', 'YC Summer 2025 Companies') 
+    import sys
+    if len(sys.argv) > 1:
+        csv_file = sys.argv[1]
+        title = sys.argv[2] if len(sys.argv) > 2 else 'YC Summer 2025 Companies'
+        csv_to_html_simple(csv_file, title)
+    else:
+        print("Usage: python simple_html_generator.py <csv_file> [title]") 

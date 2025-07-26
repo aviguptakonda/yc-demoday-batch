@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """
 YC Summer 2025 Batch Scraper
-Enhanced version with founder LinkedIn extraction and improved name/description parsing
+Enhanced version with founder LinkedIn extraction, improved name/description parsing,
+and URL content scraping with summaries
 
 Scraping Approach:
 1. Uses Playwright for headless browser automation
 2. Implements infinite scrolling to load all content
 3. Extracts company information from company links
 4. Visits individual company pages to extract founder LinkedIn profiles
-5. Improved text parsing to separate company names from descriptions
-6. Enhanced category extraction and data cleaning
+5. Scrapes content from company URLs to generate summaries
+6. Improved text parsing to separate company names from descriptions
+7. Enhanced category extraction and data cleaning
 """
 
 import asyncio
@@ -20,6 +22,8 @@ import re
 from datetime import datetime
 from playwright.async_api import async_playwright
 import pandas as pd
+from bs4 import BeautifulSoup
+import requests
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -348,6 +352,118 @@ class FinalYCScraper:
             
         return founders
     
+    async def scrape_company_url_content(self, page, company_url, company_name):
+        """Scrape content from company URL and generate a high-quality summary"""
+        try:
+            logger.info(f"Scraping content from {company_url} for {company_name}")
+            
+            # Navigate to the company page
+            await page.goto(company_url, wait_until='domcontentloaded', timeout=15000)
+            await asyncio.sleep(2)
+            
+            # Get the page content
+            content = await page.content()
+            
+            # Parse with BeautifulSoup
+            soup = BeautifulSoup(content, 'html.parser')
+            
+            # Extract high-quality text content with better targeting
+            text_content = []
+            
+            # Priority selectors for main content
+            priority_selectors = [
+                'main',
+                'article',
+                '.company-description',
+                '.description',
+                '.content',
+                '.main-content',
+                '[data-testid*="description"]',
+                '[class*="description"]',
+                '[class*="content"]'
+            ]
+            
+            # Extract content from priority selectors
+            for selector in priority_selectors:
+                elements = soup.select(selector)
+                for element in elements:
+                    text = element.get_text(strip=True)
+                    if text and len(text) > 30:  # Only substantial text
+                        text_content.append(text)
+            
+            # If no priority content found, get paragraphs
+            if not text_content:
+                paragraphs = soup.find_all('p')
+                for p in paragraphs:
+                    text = p.get_text(strip=True)
+                    if text and len(text) > 30 and not text.startswith('©') and not text.startswith('Privacy'):
+                        text_content.append(text)
+            
+            # If still no content, get all text but clean it
+            if not text_content:
+                full_text = soup.get_text(strip=True)
+                # Remove navigation and footer content
+                lines = full_text.split('\n')
+                clean_lines = []
+                for line in lines:
+                    line = line.strip()
+                    if (line and len(line) > 30 and 
+                        not line.startswith('©') and 
+                        not line.startswith('Privacy') and
+                        not line.startswith('Terms') and
+                        not line.startswith('About') and
+                        'Y Combinator' not in line and
+                        'Apply' not in line and
+                        'FAQ' not in line):
+                        clean_lines.append(line)
+                text_content = clean_lines
+            
+            # Combine all text
+            full_text = ' '.join(text_content)
+            
+            # Clean up the text more thoroughly
+            full_text = re.sub(r'\s+', ' ', full_text)  # Remove extra whitespace
+            full_text = re.sub(r'Y Combinator.*?Apply', '', full_text, flags=re.DOTALL)  # Remove navigation text
+            full_text = re.sub(r'©.*?Privacy.*?Terms', '', full_text, flags=re.DOTALL)  # Remove footer text
+            full_text = re.sub(r'[^\w\s\.\,\!\?\-\:\;\(\)]', '', full_text)  # Keep more punctuation
+            full_text = full_text.strip()
+            
+            # Generate a better summary (longer and more comprehensive)
+            if len(full_text) > 100:
+                # Take first 500 characters for better context
+                summary = full_text[:500].strip()
+                if len(full_text) > 500:
+                    # Try to end at a sentence boundary
+                    last_period = summary.rfind('.')
+                    if last_period > 400:  # If we have a good sentence break
+                        summary = summary[:last_period + 1]
+                    else:
+                        summary += "..."
+            else:
+                summary = full_text
+            
+            # If summary is still too short, try meta description
+            if len(summary) < 100:
+                meta_desc = soup.find('meta', attrs={'name': 'description'})
+                if meta_desc:
+                    meta_content = meta_desc.get('content', '')
+                    if len(meta_content) > len(summary):
+                        summary = meta_content[:500]
+                        if len(meta_content) > 500:
+                            summary += "..."
+            
+            # Final cleanup
+            summary = summary.strip()
+            if not summary or len(summary) < 20:
+                summary = "Detailed company information available on the YC website."
+            
+            logger.info(f"Generated high-quality summary for {company_name}: {len(summary)} characters")
+            return summary
+            
+        except Exception as e:
+            logger.warning(f"Could not scrape content from {company_url} for {company_name}: {e}")
+            return "Content not available"
+    
     async def scrape_companies(self):
         """Scrape companies with proper parsing"""
         max_retries = 3
@@ -600,12 +716,22 @@ class FinalYCScraper:
                         except Exception as e:
                             logger.debug(f"Could not extract founders for {company_name}: {e}")
                         
+                        # Scrape content from the company URL using a separate page
+                        summary = "Content not available"
+                        try:
+                            content_page = await context.new_page()
+                            summary = await self.scrape_company_url_content(content_page, url, company_name)
+                            await content_page.close()
+                        except Exception as e:
+                            logger.debug(f"Could not scrape content for {company_name}: {e}")
+                        
                         company_data = {
                             "name": company_name,
                             "description": description,
                             "url": url,
                             "categories": categories,
                             "founders": founders,
+                            "summary": summary,
                             "scraped_at": datetime.now().isoformat()
                         }
                         
