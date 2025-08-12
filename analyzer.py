@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+import ast
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -24,8 +25,10 @@ class YCAnalyzer:
         # Use shared output directory if provided, otherwise create new one
         if shared_output_dir:
             self.output_dir = shared_output_dir
+            logger.info(f"Using shared output directory: {self.output_dir}")
         else:
             self.output_dir = f"output_{self.timestamp}"
+            logger.info(f"Creating new output directory: {self.output_dir}")
             
         self.analyzer_dir = os.path.join(self.output_dir, "analyzer")
         self.data_dir = os.path.join(self.analyzer_dir, "data")
@@ -37,11 +40,8 @@ class YCAnalyzer:
         """Load company data from CSV or JSON file"""
         try:
             if self.data_file.endswith('.csv'):
-                # For CSV files with complex data structures, try to parse them properly
-                self.df = pd.read_csv(self.data_file, converters={
-                    'categories': lambda x: eval(x) if pd.notna(x) else [],
-                    'founders': lambda x: eval(x) if pd.notna(x) else []
-                })
+                # Load raw CSV; parse complex columns in clean_data()
+                self.df = pd.read_csv(self.data_file)
             elif self.data_file.endswith('.json'):
                 with open(self.data_file, 'r') as f:
                     data = json.load(f)
@@ -59,7 +59,7 @@ class YCAnalyzer:
             # Try alternative loading method
             try:
                 if self.data_file.endswith('.csv'):
-                    self.df = pd.read_csv(self.data_file)
+                    self.df = pd.read_csv(self.data_file, on_bad_lines='skip')
                     logger.info("Loaded CSV with basic parsing, will handle complex data in clean_data()")
             except Exception as e2:
                 logger.error(f"Alternative loading also failed: {e2}")
@@ -71,19 +71,34 @@ class YCAnalyzer:
             logger.warning("No data to clean")
             return
             
+        # Helper to parse list-like strings safely
+        def _parse_list(value):
+            if isinstance(value, list):
+                return value
+            if not isinstance(value, str) or value.strip() == '' or value.strip().lower() == 'nan':
+                return []
+            # Try JSON first
+            try:
+                parsed = json.loads(value)
+                return parsed if isinstance(parsed, list) else []
+            except Exception:
+                pass
+            # Try Python literal eval
+            try:
+                parsed = ast.literal_eval(value)
+                return parsed if isinstance(parsed, list) else []
+            except Exception:
+                pass
+            # Fallback: comma-separated
+            return [item.strip() for item in value.split(',') if item.strip()]
+
         # Convert categories from string to list if needed
         if 'categories' in self.df.columns:
-            self.df['categories'] = self.df['categories'].apply(
-                lambda x: x if isinstance(x, list) else 
-                (json.loads(x) if isinstance(x, str) and x.startswith('[') else [])
-            )
+            self.df['categories'] = self.df['categories'].apply(_parse_list)
         
         # Convert founders from string to list if needed
         if 'founders' in self.df.columns:
-            self.df['founders'] = self.df['founders'].apply(
-                lambda x: x if isinstance(x, list) else 
-                (json.loads(x) if isinstance(x, str) and x.startswith('[') else [])
-            )
+            self.df['founders'] = self.df['founders'].apply(_parse_list)
         
         # Clean descriptions
         if 'description' in self.df.columns:
@@ -164,23 +179,26 @@ class YCAnalyzer:
         linkedin_profiles = []
         
         for founders_list in self.df['founders']:
-            if isinstance(founders_list, list):
-                for founder in founders_list:
+            # Normalize founders_list to list of dicts
+            parsed_list = founders_list
+            if isinstance(parsed_list, str):
+                try:
+                    parsed_list = json.loads(parsed_list)
+                except Exception:
+                    parsed_list = []
+            if isinstance(parsed_list, list):
+                for founder in parsed_list:
                     if isinstance(founder, dict):
                         all_founders.append(founder)
-                        
-                        # Track profile types
-                        if 'profile_type' in founder:
-                            profile_types.append(founder['profile_type'])
-                        
-                        # Track LinkedIn profiles specifically
-                        if founder.get('profile_type') == 'linkedin' and founder.get('profile_url') != 'N/A':
+                        # Track LinkedIn profiles based on 'linkedin_url'
+                        linkedin_url = founder.get('linkedin_url') or ''
+                        if isinstance(linkedin_url, str) and linkedin_url.strip():
                             linkedin_profiles.append(founder)
         
         founders_analysis = {
             'total_founders': len(all_founders),
             'companies_with_founders': len([f for f in self.df['founders'] if f and len(f) > 0]),
-            'profile_type_distribution': Counter(profile_types),
+            'profile_type_distribution': Counter(profile_types) if profile_types else {},
             'linkedin_profiles_count': len(linkedin_profiles),
             'linkedin_profiles': linkedin_profiles,
             'founders_per_company': {

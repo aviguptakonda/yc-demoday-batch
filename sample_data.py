@@ -24,6 +24,7 @@ sample_companies = [
                 "title": "CTO & Co-founder"
             }
         ],
+        "summary": "What They Do: TechFlow AI builds an AI-powered workflow automation platform that helps teams streamline their processes and increase productivity by 300% through intelligent task routing and predictive analytics. | Specific Insights: Founded by ex-Google AI researchers Sarah Chen (Stanford PhD, former Google DeepMind) and Michael Rodriguez (MIT, former Tesla Autopilot team), the company has achieved 40% month-over-month growth and serves 200+ enterprise clients including Fortune 500 companies.",
         "scraped_at": datetime.now().isoformat()
     },
     {
@@ -40,6 +41,7 @@ sample_companies = [
                 "title": "Founder & CEO"
             }
         ],
+        "summary": "What They Do: GreenEnergy Solutions develops revolutionary renewable energy storage technology that makes solar power accessible to every household through proprietary lithium-ion battery optimization and smart grid integration. | Specific Insights: Led by Alex Thompson (MIT Energy PhD, former Tesla Energy lead engineer), the company has secured $15M in Series A funding and partnerships with 3 major utility companies, targeting the $120B home energy storage market.",
         "scraped_at": datetime.now().isoformat()
     },
     {
@@ -62,6 +64,7 @@ sample_companies = [
                 "title": "CTO & Co-founder"
             }
         ],
+        "summary": "What They Do: HealthSync creates a digital health platform connecting patients with healthcare providers through AI-driven matching and telemedicine, reducing wait times by 70% and improving patient outcomes. | Specific Insights: Co-founded by Dr. Emily Watson (Harvard Medical, former Mayo Clinic) and David Kim (Stanford CS, former Palantir), the platform serves 50,000+ patients and has partnerships with 200+ healthcare providers across 15 states.",
         "scraped_at": datetime.now().isoformat()
     },
     {
@@ -84,6 +87,7 @@ sample_companies = [
                 "title": "Co-founder & CTO"
             }
         ],
+        "summary": "What They Do: EduTech Pro builds a personalized learning platform using adaptive AI to create custom educational experiences for students of all ages, improving learning outcomes by 60% through individualized content delivery. | Specific Insights: Founded by Lisa Park (Stanford Education PhD, former Khan Academy VP) and James Wilson (MIT, former Google Education), the platform serves 100,000+ students and has raised $8M from top edtech investors.",
         "scraped_at": datetime.now().isoformat()
     },
     {
@@ -106,6 +110,7 @@ sample_companies = [
                 "title": "CTO & Co-founder"
             }
         ],
+        "summary": "What They Do: FinTech Secure provides next-generation financial security platform protecting digital assets with quantum-resistant encryption, securing over $2B in digital assets for institutional clients. | Specific Insights: Co-founded by Robert Zhang (Berkeley CS PhD, former Coinbase security lead) and Maria Garcia (MIT, former Goldman Sachs quant), the company has SOC 2 compliance and serves major crypto exchanges and hedge funds.",
         "scraped_at": datetime.now().isoformat()
     },
     {
@@ -128,6 +133,7 @@ sample_companies = [
                 "title": "CSO & Co-founder"
             }
         ],
+        "summary": "What They Do: BioTech Innovations develops cutting-edge biotechnology solutions for rare diseases using CRISPR technology, with 3 therapies in clinical trials targeting genetic disorders affecting 500,000+ patients globally. | Specific Insights: Led by Dr. Rachel Green (Harvard Medical PhD, former Broad Institute) and Dr. Kevin Lee (Stanford Bioengineering, former Genentech), the company has $25M in NIH grants and partnerships with major pharma companies.",
         "scraped_at": datetime.now().isoformat()
     },
     {
@@ -144,6 +150,7 @@ sample_companies = [
                 "title": "Founder & CEO"
             }
         ],
+        "summary": "What They Do: DevTools Hub provides a comprehensive developer tools platform that streamlines the entire software development lifecycle, reducing deployment time by 80% through automated CI/CD pipelines and intelligent code analysis. | Specific Insights: Founded by Chris Anderson (ex-GitHub engineer, creator of popular open-source tools with 50K+ stars), the platform serves 10,000+ developers at 500+ companies including several unicorn startups.",
         "scraped_at": datetime.now().isoformat()
     },
     {
@@ -166,6 +173,7 @@ sample_companies = [
                 "title": "CTO & Co-founder"
             }
         ],
+        "summary": "What They Do: Consumer Connect offers an AI-powered consumer insights platform helping brands understand and connect with their customers better, increasing customer engagement by 45% through predictive analytics and personalization. | Specific Insights: Co-founded by Jennifer Martinez (Wharton MBA, former P&G brand manager) and Tom Johnson (Stanford AI, former Facebook data scientist), the platform analyzes 100M+ consumer interactions for Fortune 500 brands.",
         "scraped_at": datetime.now().isoformat()
     },
     {
@@ -188,6 +196,7 @@ sample_companies = [
                 "title": "Co-founder & CTO"
             }
         ],
+        "summary": "What They Do: Enterprise Flow creates enterprise workflow automation platform designed for large organizations to optimize their operations, reducing manual processes by 90% and saving $2M+ annually per client through intelligent automation. | Specific Insights: Founded by Amanda Foster (McKinsey consultant, former Salesforce enterprise sales) and Daniel Brown (MIT, former Oracle enterprise architect), the platform serves 50+ Fortune 1000 companies with 99.9% uptime.",
         "scraped_at": datetime.now().isoformat()
     },
     {
@@ -210,6 +219,7 @@ sample_companies = [
                 "title": "CTO & Co-founder"
             }
         ],
+        "summary": "What They Do: Hardware Labs develops innovative next-generation IoT devices for smart homes and cities, creating energy-efficient sensors that reduce power consumption by 70% while improving connectivity and data accuracy. | Specific Insights: Co-founded by Ryan Davis (Berkeley EECS, former Apple hardware engineer) and Sophie Chen (MIT, former Tesla hardware lead), the company has 15 patents and partnerships with major smart city initiatives in 5 countries.",
         "scraped_at": datetime.now().isoformat()
     }
 ]

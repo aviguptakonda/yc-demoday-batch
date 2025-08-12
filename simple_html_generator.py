@@ -140,11 +140,12 @@ def csv_to_html_simple(csv_filename, title="Data Table"):
             font-size: 13px;
             line-height: 1.5;
             max-width: 500px;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #007bff;
+            padding: 16px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 12px;
+            border-left: 4px solid #28a745;
             word-wrap: break-word;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }}
         
         .comprehensive-summary {{
@@ -152,7 +153,11 @@ def csv_to_html_simple(csv_filename, title="Data Table"):
         }}
         
         .summary-section {{
-            margin-bottom: 12px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
         }}
         
         .summary-section:last-child {{
@@ -165,9 +170,10 @@ def csv_to_html_simple(csv_filename, title="Data Table"):
             text-transform: uppercase;
             letter-spacing: 0.5px;
             display: block;
-            margin-bottom: 6px;
-            border-bottom: 1px solid #dee2e6;
-            padding-bottom: 3px;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 4px;
+            font-weight: 700;
         }}
         
         .summary-section ul {{
@@ -176,9 +182,10 @@ def csv_to_html_simple(csv_filename, title="Data Table"):
         }}
         
         .summary-section li {{
-            margin: 3px 0;
+            margin: 4px 0;
             font-size: 12px;
             line-height: 1.4;
+            color: #495057;
         }}
 
         .founders {{
@@ -316,89 +323,78 @@ def csv_to_html_simple(csv_filename, title="Data Table"):
                     if pd.isna(value) or str(value).strip() == '':
                         html_content += '                        <td><span class="empty">No summary available</span></td>\n'
                     else:
-                        # Create comprehensive bullet-point summary
+                        # Render only the key parts: What they do and Specific insights
                         summary_text = str(value)
-                        
-                        # Extract company name for the summary
-                        company_name = row['name'] if pd.notna(row['name']) else "Company"
-                        
-                        # Create structured bullet-point summary
+                        # Try to split preformatted summary into the two parts if present
+                        what = ''
+                        insights = ''
+                        if 'What They Do:' in summary_text:
+                            # Expected format: "What They Do: ... | Specific Insights: ..."
+                            parts = [p.strip() for p in summary_text.split('|')]
+                            for p in parts:
+                                if p.startswith('What They Do:'):
+                                    what = p.replace('What They Do:', '').strip()
+                                elif p.startswith('Specific Insights:'):
+                                    insights = p.replace('Specific Insights:', '').strip()
+                        if not what:
+                            what = summary_text
+
                         structured_summary = f"""
                         <div class="comprehensive-summary">
                             <div class="summary-section">
-                                <strong>What {company_name} Does:</strong>
+                                <strong>What They Do</strong>
                                 <ul>
-                                    <li>{summary_text[:300]}{'...' if len(summary_text) > 300 else ''}</li>
+                                    <li>{what}</li>
                                 </ul>
                             </div>
-                            
-                            <div class="summary-section">
-                                <strong>Key Value Proposition:</strong>
-                                <ul>
-                                    <li>AI-powered automation and efficiency</li>
-                                    <li>Addresses critical industry pain points</li>
-                                    <li>Scalable B2B/enterprise solution</li>
-                                </ul>
-                            </div>
-                            
-                            <div class="summary-section">
-                                <strong>Market Opportunity:</strong>
-                                <ul>
-                                    <li>Multi-billion dollar addressable market</li>
-                                    <li>Growing demand for AI solutions</li>
-                                    <li>Established market with clear ROI</li>
-                                </ul>
-                            </div>
+                            {f'<div class="summary-section"><strong>Specific Insights</strong><ul><li>{insights}</li></ul></div>' if insights else ''}
                         </div>
                         """
-                        
+
                         html_content += f'                        <td class="summary-content">{structured_summary}</td>\n'
                 elif col == 'founders':
-                    if pd.isna(value) or str(value) == '[]':
+                    if pd.isna(value) or str(value).strip() in ('[]', ''):
                         html_content += '                        <td><span class="empty">No founders</span></td>\n'
                     else:
-                        # Parse founders list
-                        founders_str = str(value)
-                        if founders_str.startswith('[') and founders_str.endswith(']'):
-                            try:
-                                # Handle the founders list format
-                                founders_html = '<div class="founders">'
-                                if founders_str != '[]':
-                                    # Remove brackets and split by }, {
-                                    founders_clean = founders_str[1:-1]
-                                    if founders_clean:
-                                        # Split individual founder entries
-                                        founder_entries = founders_clean.split('}, {')
-                                        for entry in founder_entries:
-                                            # Clean up the entry
-                                            entry = entry.strip()
-                                            if entry.startswith('{'):
-                                                entry = entry[1:]
-                                            if entry.endswith('}'):
-                                                entry = entry[:-1]
-                                            
-                                            # Extract name and LinkedIn URL
-                                            if "'name':" in entry and "'linkedin_url':" in entry:
-                                                name_part = entry.split("'name':")[1].split("'linkedin_url':")[0].strip()
-                                                linkedin_part = entry.split("'linkedin_url':")[1].strip()
-                                                
-                                                # Extract name
-                                                name = name_part.strip("' ,")
-                                                
-                                                # Extract LinkedIn URL
-                                                linkedin_url = linkedin_part.strip("' ,")
-                                                
-                                                if name and linkedin_url:
-                                                    founders_html += f'<div class="founder"><a href="{linkedin_url}" target="_blank" class="founder-name-link">{name}</a></div>'
-                                                elif name:
-                                                    founders_html += f'<div class="founder"><span class="founder-name">{name}</span></div>'
-                                
-                                founders_html += '</div>'
-                                html_content += f'                        <td>{founders_html}</td>\n'
-                            except Exception as e:
-                                html_content += f'                        <td>{str(value)}</td>\n'
-                        else:
-                            html_content += f'                        <td>{str(value)}</td>\n'
+                        # Robustly parse founders which should be a list of dicts
+                        founders_html = '<div class="founders">'
+                        try:
+                            founders_list = value
+                            if isinstance(founders_list, str):
+                                try:
+                                    # Clean up the string format first
+                                    founders_str = founders_list.strip()
+                                    if founders_str.startswith('[') and founders_str.endswith(']'):
+                                        # Convert Python string format to JSON format (single quotes to double quotes)
+                                        founders_str = founders_str.replace("'", '"')
+                                        founders_list = json.loads(founders_str)
+                                    else:
+                                        founders_list = []
+                                except json.JSONDecodeError:
+                                    # Try to parse using eval as fallback (safer than direct eval)
+                                    try:
+                                        import ast
+                                        founders_list = ast.literal_eval(value)
+                                    except:
+                                        founders_list = []
+                            if isinstance(founders_list, list):
+                                for founder in founders_list:
+                                    name = ''
+                                    url = ''
+                                    if isinstance(founder, dict):
+                                        name = str(founder.get('name', '')).strip()
+                                        # Try both linkedin_url and profile_url for backwards compatibility
+                                        url = str(founder.get('linkedin_url', '') or founder.get('profile_url', '')).strip()
+                                    elif isinstance(founder, str):
+                                        name = founder
+                                    if name and url:
+                                        founders_html += f'<div class="founder"><a href="{url}" target="_blank" class="founder-name-link">{name}</a></div>'
+                                    elif name:
+                                        founders_html += f'<div class="founder"><span class="founder-name">{name}</span></div>'
+                        except Exception:
+                            founders_html += f'<span>{str(value)}</span>'
+                        founders_html += '</div>'
+                        html_content += f'                        <td>{founders_html}</td>\n'
                 else:
                     html_content += f'                        <td>{str(value)}</td>\n'
             

@@ -32,12 +32,12 @@ def main():
     try:
         if args.action in ['scrape', 'all']:
             logger.info("Starting data scraping...")
-            from yc_scraper import FinalYCScraper
-            scraper = FinalYCScraper()
-            companies = asyncio.run(scraper.scrape_companies())
-            if companies:
-                scraper.save_data()
-                logger.info(f"Successfully scraped {len(companies)} companies")
+            from yc_scraper_robust import RobustYCScraper
+            scraper = RobustYCScraper()
+            asyncio.run(scraper.scrape_companies())
+            if scraper.companies:
+                output_dir = scraper.save_final_data(".")
+                logger.info(f"Successfully scraped {len(scraper.companies)} companies")
                 
                 # Store the shared output directory for analyzer
                 shared_output_dir = getattr(scraper, 'shared_output_dir', None)
@@ -46,14 +46,17 @@ def main():
                 if args.action == 'all':
                     # Find the latest CSV file in output directories
                     import glob
-                    import os
                     output_dirs = glob.glob("output_*")
                     if output_dirs:
                         latest_dir = max(output_dirs, key=os.path.getctime)
                         scraper_data_dir = os.path.join(latest_dir, "scraper", "data")
                         csv_files = glob.glob(os.path.join(scraper_data_dir, "*.csv"))
-                        if csv_files:
-                            args.input = csv_files[0]
+                        # Prefer final CSVs over progress CSVs
+                        final_csvs = [p for p in csv_files if "_progress" not in p]
+                        preferred_list = final_csvs if final_csvs else csv_files
+                        if preferred_list:
+                            # Choose the most recent CSV by ctime
+                            args.input = max(preferred_list, key=os.path.getctime)
                             logger.info(f"Using latest scraped data: {args.input}")
             else:
                 logger.error("No companies were scraped")
@@ -66,7 +69,9 @@ def main():
 
         if args.action in ['analyze', 'all']:
             logger.info("Starting data analysis...")
-            analyzer = YCAnalyzer(args.input, shared_output_dir=shared_output_dir if 'shared_output_dir' in locals() else None)
+            # Use the scraper's output directory if available, otherwise create new one
+            shared_dir = shared_output_dir if 'shared_output_dir' in locals() else None
+            analyzer = YCAnalyzer(args.input, shared_output_dir=shared_dir)
             
             if not analyzer.df.empty:
                 analyzer.print_summary()
