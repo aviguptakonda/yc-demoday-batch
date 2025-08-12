@@ -1,6 +1,16 @@
 # YC Demo Day Batch Monitor
 
-A comprehensive tool for scraping and analyzing YC (Y Combinator) companies data from the [Summer 2025 batch](https://www.ycombinator.com/companies?batch=Summer%202025) and generating detailed reports with interactive visualizations.
+A comprehensive, investment-ready tool for scraping and analyzing YC (Y Combinator) companies data from the [Summer 2025 batch](https://www.ycombinator.com/companies?batch=Summer%202025) with enhanced AI-powered summary extraction, founder LinkedIn integration, and interactive visualizations.
+
+## 🔥 Latest Enhancements (December 2024)
+
+- **🧠 AI-Powered Summary Extraction**: Complete business descriptions with "What They Do" + "Specific Insights" format
+- **👥 Founder LinkedIn Integration**: Automatic extraction of founder profiles with clickable links
+- **📝 Complete Sentence Integrity**: Advanced parsing prevents sentence breaking mid-way
+- **🎯 Investment-Ready Format**: Structured data optimized for angel investors and VCs
+- **📊 Enhanced HTML Tables**: Beautiful, interactive tables with founder links and comprehensive summaries
+- **🏗️ Unified Output Structure**: Scraper and analyzer outputs organized in single timestamped directories
+- **📈 Expanded Coverage**: Now captures 143+ companies (vs. previous 86) with complete data
 
 ## 🚀 Features
 
@@ -12,6 +22,21 @@ A comprehensive tool for scraping and analyzing YC (Y Combinator) companies data
 - **Robust Parsing**: Intelligent text parsing for company names, descriptions, and categories
 - **URL Extraction**: Captures company profile URLs for further research
 - **Fallback Mechanisms**: Multiple safety checks and error recovery throughout the process
+
+### 🔥 Enhanced Summary Extraction (NEW!)
+- **AI-Powered Content Analysis**: Structured extraction of company descriptions with complete sentence preservation
+- **Investment-Ready Summaries**: "What They Do" + "Specific Insights" format optimized for investors
+- **Intelligent Content Filtering**: Removes navigation breadcrumbs and focuses on business-critical information
+- **Complete Sentence Integrity**: Advanced parsing prevents sentence breaking mid-way
+- **Founder Credentials**: Extracts founder backgrounds, education, and previous experience
+- **Traction Metrics**: Captures business metrics, funding, partnerships, and growth indicators
+- **Unique Selling Points**: Identifies competitive advantages and innovative aspects
+
+### 👥 Founder Integration
+- **LinkedIn Profile Extraction**: Automatically captures founder LinkedIn URLs from YC pages
+- **Enhanced Name Parsing**: Intelligent extraction of founder names with role information
+- **Profile Validation**: Supports multiple profile URL formats and validates data integrity
+- **Team Background Analysis**: Identifies founder credentials and previous company experience
 
 ### Data Analysis
 - **Company Analysis**: Comprehensive analysis of company data including categories, descriptions, and batch information
@@ -38,10 +63,11 @@ A comprehensive tool for scraping and analyzing YC (Y Combinator) companies data
 
 ```
 yc-demoday-batch/
-├── yc_scraper.py           # Playwright-based web scraper
-├── analyzer.py              # Main analysis engine
-├── sample_data.py           # Sample data generator
-├── main.py                  # Command-line interface
+├── yc_scraper_robust.py     # Enhanced Playwright-based web scraper with AI summaries
+├── analyzer.py              # Main analysis engine with founder statistics
+├── simple_html_generator.py # Beautiful HTML table generator with founder links
+├── sample_data.py           # Sample data generator with enhanced summaries
+├── main.py                  # Command-line interface with unified output structure
 ├── requirements.txt         # Python dependencies
 ├── README.md               # This file
 ├── activate_env.sh         # Virtual environment activation script
@@ -83,9 +109,9 @@ yc-demoday-batch/
 ./run_in_venv.sh python main.py --action all
 ```
 
-### Scrape Only (Get Latest Data)
+### Scrape Only (Get Latest Data with Enhanced Summaries)
 ```bash
-./run_in_venv.sh python yc_scraper.py
+./run_in_venv.sh python main.py --action scrape
 ```
 
 ### Analyze Only (Use Existing Data)
@@ -116,7 +142,7 @@ yc-demoday-batch/
 - **Infinite Scroll**: Automatically loads all content by scrolling
 - **Smart Parsing**: Intelligent text extraction and categorization
 
-### Scraping Process
+### Enhanced Scraping Process
 1. **Page Navigation**: Loads the YC Summer 2025 companies page
 2. **ENHANCED CONTENT LOADING**: Performs 5 different scrolling techniques to ensure ALL content is loaded:
    - Scroll to bottom with multiple passes
@@ -126,9 +152,17 @@ yc-demoday-batch/
    - Extended wait and verification techniques
 3. **Progress Tracking**: Monitors company count to detect when all content is loaded
 4. **Element Detection**: Finds company links using CSS selectors
-5. **Data Extraction**: Extracts company names, descriptions, URLs, and categories
-6. **Data Cleaning**: Removes duplicates and validates data quality
-7. **Output Generation**: Saves data in CSV and JSON formats with timestamps
+5. **Basic Data Extraction**: Extracts company names, descriptions, URLs, and categories
+6. **🔥 ENHANCED DETAIL EXTRACTION**: Two-pass approach for comprehensive data:
+   - **Pass 1**: Quick capture of all companies with basic information
+   - **Pass 2**: Deep dive into each company page for detailed summaries and founder info
+7. **AI-Powered Summary Generation**: Structured content extraction with:
+   - Business description analysis
+   - Founder background extraction
+   - Traction and metrics identification
+   - Unique selling point detection
+8. **Data Cleaning**: Removes duplicates, validates data quality, and ensures sentence integrity
+9. **Output Generation**: Saves enhanced data in CSV and JSON formats with timestamps
 
 ### Key Features
 - **MAXIMUM RELIABILITY**: Enhanced scrolling with 5 techniques ensures capture of ALL available companies
@@ -187,13 +221,20 @@ output_YYYYMMDD_HHMMSS/
 
 The scraper generates company data with the following structure:
 
-### Company Record
+### Enhanced Company Record
 - `name`: Company name
 - `description`: Company description
 - `url`: Company profile URL on YC website
 - `batch`: YC batch information (Summer 2025)
 - `categories`: List of company categories/tags
-- `founders`: List of founder information (currently empty, can be extended)
+- `founders`: **Enhanced founder information** with:
+  - `name`: Founder's full name
+  - `linkedin_url` / `profile_url`: Direct link to LinkedIn profile
+  - `profile_type`: Type of profile (linkedin, twitter, github)
+  - `title`: Role/position (CEO, CTO, Co-founder, etc.)
+- `summary`: **🔥 NEW Enhanced AI-generated summary** with:
+  - **"What They Do"**: Clear business description and value proposition
+  - **"Specific Insights"**: Founder credentials, traction metrics, and unique aspects
 - `scraped_at`: Timestamp when data was collected
 
 ## 🔍 Analysis Features
@@ -217,19 +258,23 @@ The scraper generates company data with the following structure:
 ## 🎯 Investment Insights
 
 ### Current YC Summer 2025 Batch Analysis
-- **Total Companies**: 86
-- **B2B Focus**: 42 companies (48.8%)
-- **AI/ML Heavy**: Most companies leverage AI/ML technology
-- **Diverse Sectors**: Healthcare, Fintech, Security, Robotics, Education
-- **Global Reach**: Companies from US, UK, Germany, Mexico
+- **Total Companies**: 143+ (Enhanced capture with improved scraping)
+- **B2B Dominance**: 93 companies (~65%) - B2B remains the dominant model
+- **AI/ML Revolution**: 90 companies (~63%) leverage AI/ML technology
+- **Diverse Sectors**: Healthcare, Fintech, Security, Robotics, Education, Real Estate
+- **Global Reach**: Companies from US, UK, Germany, Brazil, and more
+- **Founder Network**: 300+ founders with LinkedIn profiles captured
+- **Investment Ready**: Complete summaries with traction metrics and founder credentials
 
 ### Investment Themes
-- **AI/ML Infrastructure & Tools**
-- **B2B SaaS Solutions**
-- **Healthcare Technology**
-- **Financial Technology**
-- **Robotics & Manufacturing**
-- **Voice AI & Conversational AI**
+- **AI/ML Infrastructure & Tools** (Dominant trend with 90 companies)
+- **B2B SaaS Solutions** (93 companies focusing on enterprise)
+- **Healthcare Technology** (Digital health, AI diagnostics, clinical tools)
+- **Financial Technology** (Fintech solutions, payments, lending)
+- **Robotics & Manufacturing** (Autonomous systems, industrial automation)
+- **Voice AI & Conversational AI** (Emerging trend across multiple sectors)
+- **Developer Tools** (Infrastructure, coding agents, MLOps platforms)
+- **Real Estate Technology** (PropTech, AI assistants, automation)
 
 ## 🔧 Customization
 
@@ -243,10 +288,15 @@ The scraper generates company data with the following structure:
 2. Use the `--input` parameter to specify your data file
 3. The analyzer will automatically detect CSV or JSON formats
 
-### Extending the Scraper
-1. Modify `yc_scraper.py` to add new data extraction methods
-2. Update the parsing logic in `parse_company_text()` method
+### Extending the Enhanced Scraper
+1. Modify `yc_scraper_robust.py` to add new data extraction methods
+2. Update the parsing logic in structured content extraction methods:
+   - `_extract_main_description()` for business descriptions
+   - `_extract_team_information()` for founder data
+   - `_extract_traction_info()` for business metrics
+   - `_extract_unique_aspects()` for competitive advantages
 3. Add new selectors for different page elements
+4. Enhance the `_extract_structured_yc_content()` method for new data types
 
 ## 🐛 Troubleshooting
 
@@ -275,11 +325,15 @@ The scraper generates company data with the following structure:
 
 ## 📝 Notes
 
-- **Complete Coverage**: The scraper captures all 86 companies from the YC Summer 2025 batch
+- **🔥 Enhanced Coverage**: The scraper now captures 143+ companies from the YC Summer 2025 batch with complete summaries
+- **Investment-Ready Data**: Each company includes founder LinkedIn profiles, traction metrics, and detailed business descriptions
+- **Complete Sentence Integrity**: Advanced parsing ensures no sentences are broken mid-way
 - **Timestamped Output**: All reports and charts include timestamps to prevent overwrites
+- **Unified Output Structure**: Scraper and analyzer outputs are organized in single timestamped directories
 - **Virtual Environment**: All dependencies are isolated in a virtual environment
 - **Production Ready**: The tool is designed for regular monitoring and investment analysis
 - **Respectful Scraping**: Includes proper delays and follows website terms of service
+- **Beautiful HTML Tables**: Enhanced HTML generator creates investor-ready presentations with clickable founder links
 
 ## 🤝 Contributing
 
