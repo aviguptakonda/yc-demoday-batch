@@ -33,6 +33,7 @@ yc_env/
 output_*/
 scraper/output/
 analyzer/output/
+research_*/
 
 # Data files
 *.csv

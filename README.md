@@ -11,6 +11,10 @@ A comprehensive, investment-ready tool for scraping and analyzing YC (Y Combinat
 - **📊 Enhanced HTML Tables**: Beautiful, interactive tables with founder links and comprehensive summaries
 - **🏗️ Unified Output Structure**: Scraper and analyzer outputs organized in single timestamped directories
 - **📈 Expanded Coverage**: Now captures 143+ companies (vs. previous 86) with complete data
+- **🔍 NEW: Company Research Tool**: Multi-source research engine for deep company analysis with investment recommendations
+- **📄 NEW: Company Description Extraction**: Comprehensive "What They Do" analysis from website content
+- **🔗 Enhanced Hyperlinks**: Meaningful article titles instead of generic "Article 1", "Article 2"
+- **🧹 Improved Data Quality**: Filtered fake emails and refined technology stack detection
 
 ## 🚀 Features
 
@@ -37,6 +41,23 @@ A comprehensive, investment-ready tool for scraping and analyzing YC (Y Combinat
 - **Enhanced Name Parsing**: Intelligent extraction of founder names with role information
 - **Profile Validation**: Supports multiple profile URL formats and validates data integrity
 - **Team Background Analysis**: Identifies founder credentials and previous company experience
+
+### 🔍 Company Research Engine (NEW!)
+- **Multi-Source Data Collection**: LinkedIn, TechCrunch, Crunchbase, GitHub, NPM, Web analysis
+- **📄 Company Description Extraction**: Comprehensive "What They Do" analysis from:
+  - Hero sections and landing page messaging
+  - About sections and company overviews
+  - Product descriptions and value propositions
+  - Mission statements and company vision
+  - Meta descriptions and SEO content
+- **Investment Signal Analysis**: Automated detection of positive and negative investment indicators
+- **Real-time Funding Intelligence**: TechCrunch coverage, funding mentions, and investor data
+- **Technical Due Diligence**: GitHub activity, NPM packages, technology stack analysis
+- **Social Media Presence**: Cross-platform social media profile discovery and validation
+- **🔗 Meaningful Hyperlinks**: Article titles instead of generic "Article 1", "Article 2"
+- **🧹 Enhanced Data Quality**: Filtered fake emails and refined technology detection
+- **Automated Investment Recommendations**: AI-powered assessment with risk factors and growth indicators
+- **Beautiful Research Reports**: Professional HTML reports with comprehensive insights
 
 ### Data Analysis
 - **Company Analysis**: Comprehensive analysis of company data including categories, descriptions, and batch information
@@ -65,6 +86,7 @@ A comprehensive, investment-ready tool for scraping and analyzing YC (Y Combinat
 yc-demoday-batch/
 ├── yc_scraper_robust.py     # Enhanced Playwright-based web scraper with AI summaries
 ├── analyzer.py              # Main analysis engine with founder statistics
+├── company_researcher.py    # 🔍 NEW: Multi-source company research engine
 ├── simple_html_generator.py # Beautiful HTML table generator with founder links
 ├── sample_data.py           # Sample data generator with enhanced summaries
 ├── main.py                  # Command-line interface with unified output structure
@@ -124,6 +146,18 @@ yc-demoday-batch/
 ./run_in_venv.sh python main.py --action sample
 ```
 
+### 🔍 Research Individual Companies (NEW!)
+```bash
+# Research any company with comprehensive multi-source analysis
+./run_in_venv.sh python main.py --action research --company "OpenAI"
+
+# Include company website for enhanced analysis
+./run_in_venv.sh python main.py --action research --company "Stripe" --company-url "https://stripe.com"
+
+# Research YC companies for investment analysis
+./run_in_venv.sh python main.py --action research --company "Anthropic"
+```
+
 ### Custom Analysis
 ```bash
 ./run_in_venv.sh python main.py --action analyze --input your_data.csv --report custom_report.json --charts-dir custom_charts
@@ -132,6 +166,45 @@ yc-demoday-batch/
 ### Test Enhanced Scrolling
 ```bash
 ./run_in_venv.sh python test_scrolling.py
+```
+
+## 🔍 Company Research Tool
+
+The new company research tool provides comprehensive investment analysis by collecting data from multiple sources:
+
+### Research Sources
+- **🔗 LinkedIn**: Company pages, employee count, industry information
+- **📰 TechCrunch**: Recent articles, funding announcements, coverage analysis
+- **💰 Crunchbase**: Funding data, investor information, company valuation
+- **🐱 GitHub**: Organization repositories, stars, programming languages, activity
+- **📦 NPM**: JavaScript packages, download statistics, ecosystem presence
+- **🌐 Web Presence**: Technology stack, domain analysis, social media links
+- **📱 Social Media**: Twitter, Facebook, Instagram, YouTube profiles
+- **📺 News Coverage**: Recent media mentions and sentiment analysis
+
+### Investment Analysis Features
+- **📊 Investment Signals**: Automated detection of positive/negative indicators
+- **⚖️ Risk Assessment**: Comprehensive risk factor analysis
+- **🚀 Growth Indicators**: Metrics showing company momentum and traction
+- **🎯 Investment Recommendations**: AI-powered assessment with confidence levels
+- **📈 Overall Assessment**: Digital maturity and online presence scoring
+
+### Research Output
+Each research session generates:
+- **📄 JSON Report**: Complete structured data for programmatic analysis
+- **🌐 HTML Report**: Beautiful, professional presentation for investors with:
+  - **📄 "What They Do" Section**: Structured company description from website analysis
+  - **🔗 Meaningful Article Links**: Clickable titles instead of generic labels
+  - **🧹 Clean Data Display**: Filtered technology stack and contact information
+- **🧠 AI Insights**: Investment recommendation with detailed reasoning
+- **📊 Multi-Source Summary**: Comprehensive data from all research sources
+
+### Research Directory Structure
+```
+research_CompanyName_YYYYMMDD/
+├── CompanyName_research_report.json    # Structured data with company descriptions
+├── CompanyName_research_report.html    # Professional HTML report with "What They Do"
+└── (auto-ignored by git)               # All research outputs excluded from version control
 ```
 
 ## 🔍 Scraping Approach
@@ -350,7 +423,10 @@ This project is for educational and research purposes. Please respect YC's terms
 ## 🎯 Use Cases
 
 1. **Angel Investment Research**: Analyze YC companies for investment opportunities
-2. **Market Analysis**: Understand startup ecosystem trends and sector distribution
-3. **Competitive Intelligence**: Track emerging companies in specific sectors
-4. **Data Collection**: Build comprehensive datasets of YC companies
-5. **Academic Research**: Study startup ecosystem patterns and trends
+2. **Individual Company Due Diligence**: Deep research on specific companies with multi-source analysis
+3. **Market Analysis**: Understand startup ecosystem trends and sector distribution
+4. **Competitive Intelligence**: Track emerging companies in specific sectors
+5. **Investment Decision Support**: AI-powered recommendations with risk assessment
+6. **Data Collection**: Build comprehensive datasets of YC companies
+7. **Academic Research**: Study startup ecosystem patterns and trends
+8. **Venture Capital Research**: Professional-grade company analysis and reporting

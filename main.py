@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser(description='YC Demo Day Batch Monitor')
-    parser.add_argument('--action', choices=['scrape', 'analyze', 'sample', 'all'], default='all',
-                       help='Action to perform: scrape data, analyze data, generate sample data, or all')
+    parser.add_argument('--action', choices=['scrape', 'analyze', 'sample', 'research', 'all'], default='all',
+                       help='Action to perform: scrape data, analyze data, generate sample data, research company, or all')
     parser.add_argument('--input', default='yc_companies.csv',
                        help='Input file for analysis (default: yc_companies.csv)')
     parser.add_argument('--report', default='analysis_report.json',
@@ -27,9 +27,41 @@ def main():
     parser.add_argument('--charts-dir', default='charts',
                        help='Output directory for charts (default: charts)')
     
+    # Research-specific arguments
+    parser.add_argument('--company', type=str,
+                       help='Company name to research (required for research action)')
+    parser.add_argument('--company-url', type=str,
+                       help='Company website URL (optional for research action)')
+    
     args = parser.parse_args()
     
     try:
+        # Handle research action
+        if args.action == 'research':
+            if not args.company:
+                logger.error("Company name is required for research action. Use --company 'Company Name'")
+                sys.exit(1)
+            
+            logger.info(f"Starting comprehensive research for: {args.company}")
+            from company_researcher import CompanyResearcher
+            
+            researcher = CompanyResearcher()
+            research_data = asyncio.run(researcher.research_company(args.company, args.company_url))
+            
+            # Generate HTML report
+            html_report = researcher.generate_html_report(research_data)
+            html_path = os.path.join(researcher.output_dir, f"{args.company.replace(' ', '_')}_research_report.html")
+            
+            with open(html_path, 'w', encoding='utf-8') as f:
+                f.write(html_report)
+            
+            logger.info(f"✅ Research completed for {args.company}!")
+            json_report_path = os.path.join(researcher.output_dir, f"{args.company.replace(' ', '_')}_research_report.json")
+            logger.info(f"📊 JSON Report: {json_report_path}")
+            logger.info(f"🌐 HTML Report: {html_path}")
+            logger.info(f"🎯 Investment Recommendation: {research_data['insights']['recommendation']}")
+            return
+        
         if args.action in ['scrape', 'all']:
             logger.info("Starting data scraping...")
             from yc_scraper_robust import RobustYCScraper
