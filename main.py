@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser(description='YC Demo Day Batch Monitor')
-    parser.add_argument('--action', choices=['scrape', 'analyze', 'sample', 'research', 'all'], default='all',
-                       help='Action to perform: scrape data, analyze data, generate sample data, research company, or all')
+    parser.add_argument('--action', choices=['scrape', 'analyze', 'sample', 'research', 'diff', 'all'], default='all',
+                       help='Action to perform: scrape data, analyze data, generate sample data, research company, diff companies, or all')
     parser.add_argument('--input', default='yc_companies.csv',
                        help='Input file for analysis (default: yc_companies.csv)')
     parser.add_argument('--report', default='analysis_report.json',
@@ -32,6 +32,12 @@ def main():
                        help='Company name to research (required for research action)')
     parser.add_argument('--company-url', type=str,
                        help='Company website URL (optional for research action)')
+    
+    # Diff-specific arguments
+    parser.add_argument('--html-file', type=str,
+                       help='HTML file path (file:// URL or local path) to compare against YC S2025 batch (required for diff action)')
+    parser.add_argument('--diff-output', type=str, default='company_diff_report.json',
+                       help='Output file for diff report (default: company_diff_report.json)')
     
     args = parser.parse_args()
     
@@ -60,6 +66,50 @@ def main():
             logger.info(f"📊 JSON Report: {json_report_path}")
             logger.info(f"🌐 HTML Report: {html_path}")
             logger.info(f"🎯 Investment Recommendation: {research_data['insights']['recommendation']}")
+            return
+        
+        # Handle diff action
+        if args.action == 'diff':
+            if not args.html_file:
+                logger.error("HTML file path is required for diff action. Use --html-file 'path/to/file.html'")
+                sys.exit(1)
+            
+            logger.info(f"Starting company comparison between YC S2025 batch and HTML file: {args.html_file}")
+            
+            # Use existing data if available, otherwise try to find latest data
+            input_file = args.input
+            if not os.path.exists(input_file):
+                # Try to find the latest CSV file from output directories
+                import glob
+                output_dirs = glob.glob("output_*")
+                if output_dirs:
+                    latest_dir = max(output_dirs, key=os.path.getctime)
+                    scraper_data_dir = os.path.join(latest_dir, "scraper", "data")
+                    csv_files = glob.glob(os.path.join(scraper_data_dir, "*.csv"))
+                    # Prefer final CSVs over progress CSVs
+                    final_csvs = [p for p in csv_files if "_progress" not in p]
+                    preferred_list = final_csvs if final_csvs else csv_files
+                    if preferred_list:
+                        input_file = max(preferred_list, key=os.path.getctime)
+                        logger.info(f"Using latest scraped data: {input_file}")
+                    else:
+                        logger.error("No YC company data found. Please run scraper first or provide data file.")
+                        sys.exit(1)
+                else:
+                    logger.error("No YC company data found. Please run scraper first or provide data file.")
+                    sys.exit(1)
+            
+            analyzer = YCAnalyzer(input_file)
+            
+            if analyzer.df.empty:
+                logger.error("No data available for comparison. Please check your data file.")
+                sys.exit(1)
+            
+            # Perform the diff
+            diff_report = analyzer.diff_companies(args.html_file, args.diff_output)
+            
+            logger.info("✅ Company comparison completed!")
+            logger.info(f"📊 Detailed report saved with visualizations")
             return
         
         if args.action in ['scrape', 'all']:

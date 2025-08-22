@@ -10,6 +10,8 @@ import numpy as np
 from datetime import datetime
 import logging
 import os
+from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -355,6 +357,496 @@ class YCAnalyzer:
             print(f"  {metric.replace('_', ' ').title()}: {count}")
         
         print("\n" + "="*50)
+    
+    def parse_html_companies(self, html_file_path):
+        """Parse company names from an HTML file"""
+        if not os.path.exists(html_file_path):
+            # Try treating it as a file:// URL
+            if html_file_path.startswith('file://'):
+                html_file_path = html_file_path[7:]  # Remove 'file://' prefix
+                if not os.path.exists(html_file_path):
+                    logger.error(f"HTML file not found: {html_file_path}")
+                    return set()
+            else:
+                logger.error(f"HTML file not found: {html_file_path}")
+                return set()
+        
+        try:
+            with open(html_file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            soup = BeautifulSoup(content, 'html.parser')
+            company_names = set()
+            
+            logger.info(f"Attempting to parse HTML file: {html_file_path}")
+            
+            # Method 1: Try to find table structure and Company column
+            tables = soup.find_all('table')
+            logger.info(f"Found {len(tables)} table(s) in HTML")
+            
+            for table_idx, table in enumerate(tables):
+                logger.info(f"Processing table {table_idx + 1}")
+                rows = table.find_all('tr')
+                
+                if not rows:
+                    continue
+                
+                # Try to find header row
+                header_row = None
+                header_cells = []
+                
+                # Check first few rows for headers
+                for row in rows[:3]:
+                    cells = row.find_all(['th', 'td'])
+                    if cells:
+                        cell_texts = [cell.get_text(strip=True) for cell in cells]
+                        # Look for typical header words
+                        if any(text.lower() in ['company', 'name', 'startup'] for text in cell_texts):
+                            header_row = row
+                            header_cells = cell_texts
+                            logger.info(f"Found header row: {header_cells}")
+                            break
+                
+                if header_row and header_cells:
+                    # Find Company column index
+                    company_col_idx = None
+                    for idx, header in enumerate(header_cells):
+                        if header.lower() in ['company', 'company name', 'name', 'startup', 'startup name']:
+                            company_col_idx = idx
+                            logger.info(f"Found Company column at index {idx}: '{header}'")
+                            break
+                    
+                    if company_col_idx is not None:
+                        # Extract company names from this column
+                        data_rows = rows[1:] if header_row == rows[0] else rows
+                        for row in data_rows:
+                            cells = row.find_all(['td', 'th'])
+                            if len(cells) > company_col_idx:
+                                company_text = cells[company_col_idx].get_text(strip=True)
+                                if company_text and company_text.lower() not in ['company', 'name', 'startup', '']:
+                                    # Clean the company name
+                                    clean_name = self._clean_company_name(company_text)
+                                    if clean_name:
+                                        company_names.add(clean_name)
+                                        logger.debug(f"Found company: {clean_name}")
+                        
+                        if company_names:
+                            logger.info(f"Successfully extracted {len(company_names)} companies from table structure")
+                            return company_names
+            
+            # Method 2: Fallback to the original parsing logic
+            logger.info("No table structure found, falling back to original parsing method")
+            
+            # Look for companies in table cells with class "company-name"
+            company_cells = soup.find_all('td', class_='company-name')
+            for cell in company_cells:
+                text = cell.get_text(strip=True)
+                # Extract company name from the beginning of the text
+                # Pattern observed: CompanyNameLocation...Description...BatchType
+                # We need to extract just the company name
+                if text:
+                    import re
+                    
+                    # Method 1: Split by known location patterns first
+                    # Common patterns: "San Francisco, CA, USA", "London, England, United Kingdom", "São Paulo, SP, Brazil"
+                    location_patterns = [
+                        r'[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z]{2,}(?:,\s*[A-Z]{2,})?',  # City, State/Province, Country
+                        r'[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*',  # Full location
+                        r'São\s+Paulo,\s*SP,\s*Brazil',  # Special case for São Paulo
+                        r'London,\s*England,\s*United\s*Kingdom'  # Special case for London
+                    ]
+                    
+                    company_name = text
+                    for pattern in location_patterns:
+                        match = re.search(pattern, text)
+                        if match:
+                            # Take everything before the location
+                            company_name = text[:match.start()].strip()
+                            break
+                    
+                    # Method 2: If no location found, try splitting by other patterns
+                    if company_name == text:
+                        # Look for description patterns that start with common words
+                        desc_start_patterns = [
+                            r'\s+(The\s+[A-Z])',  # "The simulation...", "The AI..."
+                            r'\s+(AI-powered)',   # "AI-powered..."
+                            r'\s+(Voice\s+AI)',   # "Voice AI..."
+                            r'\s+(Autonomous)',   # "Autonomous..."
+                            r'\s+(We\s+[a-z])',   # "We help...", "We audit..."
+                            r'\s+(Build)',        # "Build AI..."
+                            r'\s+(Helping)',      # "Helping..."
+                            r'\s+(Database)',     # "Database of..."
+                            r'\s+(Converting)',   # "Converting..."
+                            r'\s+(Replacing)'     # "Replacing..."
+                        ]
+                        
+                        for pattern in desc_start_patterns:
+                            match = re.search(pattern, text)
+                            if match:
+                                company_name = text[:match.start()].strip()
+                                break
+                    
+                    # Method 3: Remove batch and category info that might be at the end
+                    clean_name = re.sub(r'(Summer\s+\d+|Winter\s+\d+|Spring\s+\d+|Fall\s+\d+).*$', '', company_name)
+                    
+                    # Remove category patterns at the end
+                    category_patterns = [
+                        r'B2B.*$', r'B2C.*$', r'Consumer.*$', r'Healthcare.*$', r'Fintech.*$',
+                        r'Government.*$', r'Infrastructure.*$', r'Sales.*$', r'Security.*$',
+                        r'Engineering.*$', r'Product.*$', r'Design.*$', r'Real\s+Estate.*$',
+                        r'Manufacturing.*$', r'Robotics.*$', r'Industrials.*$', r'Education.*$'
+                    ]
+                    
+                    for pattern in category_patterns:
+                        clean_name = re.sub(pattern, '', clean_name, flags=re.IGNORECASE)
+                    
+                    clean_name = clean_name.strip()
+                    
+                    # Final cleanup: remove trailing dots, commas, and extra whitespace
+                    clean_name = re.sub(r'[.,\s]+$', '', clean_name)
+                    
+                    # Only add if it looks like a valid company name (not too short, contains letters)
+                    if clean_name and len(clean_name) > 1 and re.search(r'[A-Za-z]', clean_name):
+                        company_names.add(clean_name)
+            
+            logger.info(f"Parsed {len(company_names)} companies from HTML file: {html_file_path}")
+            return company_names
+            
+        except Exception as e:
+            logger.error(f"Error parsing HTML file {html_file_path}: {e}")
+            return set()
+    
+    def _clean_company_name(self, text):
+        """Clean and extract company name from raw text"""
+        if not text:
+            return None
+        
+        import re
+        
+        # Method 1: Split by known location patterns first
+        # Common patterns: "San Francisco, CA, USA", "London, England, United Kingdom"
+        location_patterns = [
+            r'[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z]{2,}(?:,\s*[A-Z]{2,})?',  # City, State/Province, Country
+            r'[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*',  # Full location
+            r'São\s+Paulo,\s*SP,\s*Brazil',  # Special case for São Paulo
+            r'London,\s*England,\s*United\s*Kingdom'  # Special case for London
+        ]
+        
+        company_name = text
+        for pattern in location_patterns:
+            match = re.search(pattern, text)
+            if match:
+                # Take everything before the location
+                company_name = text[:match.start()].strip()
+                break
+        
+        # Method 2: If no location found, try splitting by description patterns
+        if company_name == text:
+            # Look for description patterns that start with common words
+            desc_start_patterns = [
+                r'\s+(The\s+[A-Z])',  # "The simulation...", "The AI..."
+                r'\s+(AI-powered)',   # "AI-powered..."
+                r'\s+(Voice\s+AI)',   # "Voice AI..."
+                r'\s+(Autonomous)',   # "Autonomous..."
+                r'\s+(We\s+[a-z])',   # "We help...", "We audit..."
+                r'\s+(Build)',        # "Build AI..."
+                r'\s+(Helping)',      # "Helping..."
+                r'\s+(Database)',     # "Database of..."
+                r'\s+(Converting)',   # "Converting..."
+                r'\s+(Replacing)'     # "Replacing..."
+            ]
+            
+            for pattern in desc_start_patterns:
+                match = re.search(pattern, text)
+                if match:
+                    company_name = text[:match.start()].strip()
+                    break
+        
+        # Method 3: Remove batch and category info that might be at the end
+        clean_name = re.sub(r'(Summer\s+\d+|Winter\s+\d+|Spring\s+\d+|Fall\s+\d+).*$', '', company_name)
+        
+        # Remove category patterns at the end
+        category_patterns = [
+            r'B2B.*$', r'B2C.*$', r'Consumer.*$', r'Healthcare.*$', r'Fintech.*$',
+            r'Government.*$', r'Infrastructure.*$', r'Sales.*$', r'Security.*$',
+            r'Engineering.*$', r'Product.*$', r'Design.*$', r'Real\s+Estate.*$',
+            r'Manufacturing.*$', r'Robotics.*$', r'Industrials.*$', r'Education.*$'
+        ]
+        
+        for pattern in category_patterns:
+            clean_name = re.sub(pattern, '', clean_name, flags=re.IGNORECASE)
+        
+        clean_name = clean_name.strip()
+        
+        # Final cleanup: remove trailing dots, commas, and extra whitespace
+        clean_name = re.sub(r'[.,\s]+$', '', clean_name)
+        
+        # Remove parenthetical information
+        clean_name = re.sub(r'\s*\([^)]*\).*', '', clean_name)
+        
+        # Remove dashes and everything after
+        clean_name = re.sub(r'\s*-.*', '', clean_name)
+        
+        # Only return if it looks like a valid company name (not too short, contains letters)
+        if clean_name and len(clean_name) > 1 and re.search(r'[A-Za-z]', clean_name):
+            return clean_name
+        
+        return None
+    
+    def diff_companies(self, html_file_path, output_file=None):
+        """Compare YC S2025 batch companies with companies in HTML file"""
+        if self.df.empty:
+            logger.error("No company data loaded. Please load data first.")
+            return {}
+        
+        # Get companies from current dataset and clean them for comparison
+        current_companies_raw = set()
+        if 'name' in self.df.columns:
+            current_companies_raw = set(self.df['name'].dropna().str.strip())
+        
+        # Clean the scraped company names to extract just the company name
+        current_companies = set()
+        for company_raw in current_companies_raw:
+            clean_name = self._clean_company_name(company_raw)
+            if clean_name:
+                current_companies.add(clean_name)
+        
+        logger.info(f"Cleaned {len(current_companies_raw)} raw companies to {len(current_companies)} clean names")
+        
+        # Get companies from HTML file
+        html_companies = self.parse_html_companies(html_file_path)
+        
+        # Find companies in S2025 batch but not in HTML file
+        missing_in_html = current_companies - html_companies
+        
+        # Find companies in HTML but not in current S2025 batch
+        missing_in_s2025 = html_companies - current_companies
+        
+        # Find common companies
+        common_companies = current_companies & html_companies
+        
+        diff_report = {
+            'total_s2025_companies': len(current_companies),
+            'total_html_companies': len(html_companies),
+            'common_companies': sorted(list(common_companies)),
+            'missing_in_html': sorted(list(missing_in_html)),
+            'missing_in_s2025': sorted(list(missing_in_s2025)),
+            'common_count': len(common_companies),
+            'missing_in_html_count': len(missing_in_html),
+            'missing_in_s2025_count': len(missing_in_s2025),
+            'html_file_path': html_file_path,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # Print summary
+        print("\n" + "="*60)
+        print("YC S2025 COMPANIES NOT IN HTML FILE")
+        print("="*60)
+        print(f"HTML File: {html_file_path}")
+        print(f"YC S2025 Companies: {len(current_companies)}")
+        print(f"HTML File Companies: {len(html_companies)}")
+        print(f"Common Companies: {len(common_companies)}")
+        print(f"Companies in S2025 but NOT in HTML: {len(missing_in_html)}")
+        
+        if missing_in_html:
+            print(f"\n📋 Companies in YC S2025 batch but NOT listed in HTML file:")
+            for i, company in enumerate(sorted(missing_in_html), 1):
+                print(f"  {i:3d}. {company}")
+        else:
+            print(f"\n✅ All YC S2025 companies are present in the HTML file!")
+        
+        print("="*60)
+        
+        # Save detailed report if output file specified
+        if output_file:
+            # Create output directory structure
+            os.makedirs(self.data_dir, exist_ok=True)
+            
+            # Add timestamp to filename
+            name, ext = os.path.splitext(output_file)
+            timestamped_filename = os.path.join(self.data_dir, f"{name}_diff_{self.timestamp}{ext}")
+            
+            with open(timestamped_filename, 'w', encoding='utf-8') as f:
+                json.dump(diff_report, f, indent=2, ensure_ascii=False)
+            
+            logger.info(f"Diff report saved to: {timestamped_filename}")
+            
+            # Also create an HTML report for better visualization
+            html_report = self.generate_diff_html_report(diff_report)
+            html_path = os.path.join(self.html_dir, f"{name}_diff_{self.timestamp}.html")
+            os.makedirs(self.html_dir, exist_ok=True)
+            
+            with open(html_path, 'w', encoding='utf-8') as f:
+                f.write(html_report)
+            
+            logger.info(f"Diff HTML report saved to: {html_path}")
+        
+        return diff_report
+    
+    def generate_diff_html_report(self, diff_report):
+        """Generate HTML report for the diff analysis"""
+        html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YC S2025 Companies Not in HTML File</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }}
+        .header {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }}
+        .header h1 {{
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: 300;
+        }}
+        .header p {{
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }}
+        .stats-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }}
+        .stat-card {{
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }}
+        .stat-number {{
+            font-size: 2.5em;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 10px;
+        }}
+        .stat-label {{
+            color: #6c757d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }}
+        .companies-section {{
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }}
+        .companies-section h2 {{
+            color: #667eea;
+            margin-top: 0;
+            border-bottom: 2px solid #f1f3f4;
+            padding-bottom: 10px;
+        }}
+        .companies-list {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }}
+        .company-item {{
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }}
+        .missing-in-html {{
+            border-left-color: #dc3545;
+        }}
+        .missing-in-s2025 {{
+            border-left-color: #ffc107;
+        }}
+        .common {{
+            border-left-color: #28a745;
+        }}
+        .footer {{
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9em;
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📋 YC S2025 Companies Not in HTML File</h1>
+        <p><strong>Missing Companies Analysis</strong></p>
+        <p>Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}</p>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{diff_report['total_s2025_companies']}</div>
+            <div class="stat-label">S2025 Companies</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{diff_report['total_html_companies']}</div>
+            <div class="stat-label">HTML Companies</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{diff_report['common_count']}</div>
+            <div class="stat-label">Common</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{diff_report['missing_in_html_count']}</div>
+            <div class="stat-label">Missing from HTML</div>
+        </div>
+    </div>
+    
+    {self._format_companies_section('Companies in YC S2025 but NOT in HTML File', diff_report['missing_in_html'], 'missing-in-html')}
+    
+    <div class="footer">
+        <p>HTML File: {diff_report['html_file_path']}</p>
+        <p>Report generated by YC Company Analyzer</p>
+    </div>
+</body>
+</html>
+        """
+        return html_content
+    
+    def _format_companies_section(self, title, companies, css_class):
+        """Format a section of companies for HTML report"""
+        if not companies:
+            return f"""
+    <div class="companies-section">
+        <h2>{title}</h2>
+        <p><em>No companies found in this category.</em></p>
+    </div>
+            """
+        
+        companies_html = ""
+        for company in companies:
+            companies_html += f'<div class="company-item {css_class}">{company}</div>'
+        
+        return f"""
+    <div class="companies-section">
+        <h2>{title} ({len(companies)})</h2>
+        <div class="companies-list">
+            {companies_html}
+        </div>
+    </div>
+        """
 
 def main():
     """Main function to run the analyzer"""

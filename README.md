@@ -61,6 +61,7 @@ A comprehensive, investment-ready tool for scraping and analyzing YC (Y Combinat
 
 ### Data Analysis
 - **Company Analysis**: Comprehensive analysis of company data including categories, descriptions, and batch information
+- **Company Diff**: Compare YC S2025 batch companies with companies listed in HTML files to identify differences
 - **Category Distribution**: Identifies and analyzes company categories and sectors
 - **Description Analysis**: Analyzes company descriptions for keywords and themes
 - **Data Quality Metrics**: Tracks missing data and data completeness
@@ -156,6 +157,18 @@ yc-demoday-batch/
 
 # Research YC companies for investment analysis
 ./run_in_venv.sh python main.py --action research --company "Anthropic"
+```
+
+### 📊 Compare Company Lists (NEW!)
+```bash
+# Compare YC S2025 batch with companies in an HTML file
+./run_in_venv.sh python main.py --action diff --html-file "file:///path/to/companies.html"
+
+# Use specific data file for comparison
+./run_in_venv.sh python main.py --action diff --input yc_companies.csv --html-file "file:///path/to/companies.html"
+
+# Generate custom diff report
+./run_in_venv.sh python main.py --action diff --html-file "file:///path/to/companies.html" --diff-output custom_diff.json
 ```
 
 ### Custom Analysis
@@ -263,8 +276,10 @@ output_YYYYMMDD_HHMMSS/
 │       └── yc_companies_YYYYMMDD_HHMMSS_table.html
 └── analyzer/                 # Analysis results and visualizations
     ├── data/                 # Analysis reports
-    │   └── analysis_report_YYYYMMDD_HHMMSS.json
+    │   ├── analysis_report_YYYYMMDD_HHMMSS.json
+    │   └── company_diff_report_diff_YYYYMMDD_HHMMSS.json
     ├── html/                 # Analysis HTML tables
+    │   ├── company_diff_report_diff_YYYYMMDD_HHMMSS.html
     │   └── analysis_report_YYYYMMDD_HHMMSS_table.html
     └── charts/               # Interactive Plotly visualizations
         ├── category_distribution.html
@@ -288,6 +303,10 @@ output_YYYYMMDD_HHMMSS/
 - `analyzer/charts/description_length_distribution.html`: Description length analysis
 - `analyzer/charts/batch_distribution.html`: Companies by batch visualization
 - `analyzer/charts/founder_profile_types.html`: Founder profile types distribution
+
+### Diff Report Files
+- `analyzer/data/company_diff_report_diff_*.json`: JSON diff report with detailed comparison data
+- `analyzer/html/company_diff_report_diff_*.html`: Beautiful HTML report showing companies missing from each dataset, with visual statistics and color-coded sections
 - `analyzer/charts/founders_per_company.html`: Founders per company distribution
 
 ## 📋 Data Structure
