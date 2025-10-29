@@ -40,10 +40,11 @@ class RobustYCScraper:
     for investment analysis purposes.
     """
     
-    def __init__(self):
+    def __init__(self, batch="Fall 2025"):
         """Initialize the scraper with default settings and statistics tracking."""
         self.companies = []
         self.output_dir = None
+        self.batch = batch
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.session_stats = {
             'total_processed': 0,
@@ -86,8 +87,9 @@ class RobustYCScraper:
                 
                 try:
                     # Navigate to YC companies page
-                    logger.info("Navigating to YC companies page...")
-                    await page.goto("https://www.ycombinator.com/companies?batch=Summer%202025", 
+                    logger.info(f"Navigating to YC companies page for {self.batch} batch...")
+                    batch_url = f"https://www.ycombinator.com/companies?batch={self.batch.replace(' ', '%20')}"
+                    await page.goto(batch_url, 
                                   wait_until='domcontentloaded', 
                                   timeout=self.config['page_timeout'])
                     await asyncio.sleep(3)

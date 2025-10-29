@@ -18,10 +18,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 class YCAnalyzer:
-    def __init__(self, data_file="yc_companies.csv", shared_output_dir=None):
+    def __init__(self, data_file="yc_companies.csv", shared_output_dir=None, batch="Fall 2025"):
         """Initialize analyzer with company data"""
         self.data_file = data_file
         self.df = None
+        self.batch = batch
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
         # Use shared output directory if provided, otherwise create new one
@@ -594,7 +595,7 @@ class YCAnalyzer:
         return None
     
     def diff_companies(self, html_file_path, output_file=None):
-        """Compare YC S2025 batch companies with companies in HTML file"""
+        f"""Compare YC {self.batch} batch companies with companies in HTML file"""
         if self.df.empty:
             logger.error("No company data loaded. Please load data first.")
             return {}
@@ -616,10 +617,10 @@ class YCAnalyzer:
         # Get companies from HTML file
         html_companies = self.parse_html_companies(html_file_path)
         
-        # Find companies in S2025 batch but not in HTML file
+        # Find companies in current batch but not in HTML file
         missing_in_html = current_companies - html_companies
         
-        # Find companies in HTML but not in current S2025 batch
+        # Find companies in HTML but not in current batch
         missing_in_s2025 = html_companies - current_companies
         
         # Find common companies
@@ -640,20 +641,20 @@ class YCAnalyzer:
         
         # Print summary
         print("\n" + "="*60)
-        print("YC S2025 COMPANIES NOT IN HTML FILE")
+        print(f"YC {self.batch.upper().replace(' ', '')} COMPANIES NOT IN HTML FILE")
         print("="*60)
         print(f"HTML File: {html_file_path}")
-        print(f"YC S2025 Companies: {len(current_companies)}")
+        print(f"YC {self.batch} Companies: {len(current_companies)}")
         print(f"HTML File Companies: {len(html_companies)}")
         print(f"Common Companies: {len(common_companies)}")
-        print(f"Companies in S2025 but NOT in HTML: {len(missing_in_html)}")
+        print(f"Companies in {self.batch} but NOT in HTML: {len(missing_in_html)}")
         
         if missing_in_html:
-            print(f"\n📋 Companies in YC S2025 batch but NOT listed in HTML file:")
+            print(f"\n📋 Companies in YC {self.batch} batch but NOT listed in HTML file:")
             for i, company in enumerate(sorted(missing_in_html), 1):
                 print(f"  {i:3d}. {company}")
         else:
-            print(f"\n✅ All YC S2025 companies are present in the HTML file!")
+            print(f"\n✅ All YC {self.batch} companies are present in the HTML file!")
         
         print("="*60)
         
@@ -691,7 +692,7 @@ class YCAnalyzer:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YC S2025 Companies Not in HTML File</title>
+    <title>YC {self.batch} Companies Not in HTML File</title>
     <style>
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
@@ -790,7 +791,7 @@ class YCAnalyzer:
 </head>
 <body>
     <div class="header">
-        <h1>📋 YC S2025 Companies Not in HTML File</h1>
+        <h1>📋 YC {self.batch} Companies Not in HTML File</h1>
         <p><strong>Missing Companies Analysis</strong></p>
         <p>Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')}</p>
     </div>
@@ -798,7 +799,7 @@ class YCAnalyzer:
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-number">{diff_report['total_s2025_companies']}</div>
-            <div class="stat-label">S2025 Companies</div>
+            <div class="stat-label">{self.batch} Companies</div>
         </div>
         <div class="stat-card">
             <div class="stat-number">{diff_report['total_html_companies']}</div>
@@ -814,7 +815,7 @@ class YCAnalyzer:
         </div>
     </div>
     
-    {self._format_companies_section('Companies in YC S2025 but NOT in HTML File', diff_report['missing_in_html'], 'missing-in-html')}
+    {self._format_companies_section(f'Companies in YC {self.batch} but NOT in HTML File', diff_report['missing_in_html'], 'missing-in-html')}
     
     <div class="footer">
         <p>HTML File: {diff_report['html_file_path']}</p>

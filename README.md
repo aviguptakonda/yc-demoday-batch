@@ -1,6 +1,6 @@
 # YC Demo Day Batch Monitor
 
-A comprehensive, investment-ready tool for scraping and analyzing YC (Y Combinator) companies data from the [Summer 2025 batch](https://www.ycombinator.com/companies?batch=Summer%202025) with enhanced AI-powered summary extraction, founder LinkedIn integration, and interactive visualizations.
+A comprehensive, investment-ready tool for scraping and analyzing YC (Y Combinator) companies data from any batch (default: [Fall 2025](https://www.ycombinator.com/companies?batch=Fall%202025)) with enhanced AI-powered summary extraction, founder LinkedIn integration, and interactive visualizations.
 
 ## 🔥 Latest Enhancements (December 2024)
 
@@ -21,7 +21,7 @@ A comprehensive, investment-ready tool for scraping and analyzing YC (Y Combinat
 ### Web Scraping
 - **ENHANCED ROBUST SCROLLING**: Advanced headless browser scraping with 5 different scrolling techniques
 - **MAXIMUM RELIABILITY**: Priority on capturing ALL available companies with multiple retry attempts
-- **Complete Coverage**: Captures all companies from YC Summer 2025 batch with enhanced accuracy
+- **Complete Coverage**: Captures all companies from YC Fall 2025 batch with enhanced accuracy
 - **Dynamic Content Handling**: Handles JavaScript-loaded content and lazy loading with verification
 - **Robust Parsing**: Intelligent text parsing for company names, descriptions, and categories
 - **URL Extraction**: Captures company profile URLs for further research
@@ -59,9 +59,16 @@ A comprehensive, investment-ready tool for scraping and analyzing YC (Y Combinat
 - **Automated Investment Recommendations**: AI-powered assessment with risk factors and growth indicators
 - **Beautiful Research Reports**: Professional HTML reports with comprehensive insights
 
+### 🎯 Flexible Batch Targeting (NEW!)
+- **Dynamic Batch Selection**: Target any YC batch via command-line argument
+- **Automatic URL Generation**: Constructs proper YC URLs for any batch
+- **Batch-Aware Analysis**: All reports and outputs reflect the selected batch
+- **Historical Data Support**: Scrape and analyze past batches (Summer 2024, Winter 2025, etc.)
+- **Default Configuration**: Falls back to Fall 2025 if no batch specified
+
 ### Data Analysis
 - **Company Analysis**: Comprehensive analysis of company data including categories, descriptions, and batch information
-- **Company Diff**: Compare YC S2025 batch companies with companies listed in HTML files to identify differences
+- **Company Diff**: Compare YC batch companies with companies listed in HTML files to identify differences
 - **Category Distribution**: Identifies and analyzes company categories and sectors
 - **Description Analysis**: Analyzes company descriptions for keywords and themes
 - **Data Quality Metrics**: Tracks missing data and data completeness
@@ -129,12 +136,20 @@ yc-demoday-batch/
 
 ### Complete Pipeline (Scrape + Analyze)
 ```bash
+# Default: Fall 2025 batch
 ./run_in_venv.sh python main.py --action all
+
+# Specific batch
+./run_in_venv.sh python main.py --action all --batch "Summer 2025"
 ```
 
 ### Scrape Only (Get Latest Data with Enhanced Summaries)
 ```bash
+# Default: Fall 2025 batch
 ./run_in_venv.sh python main.py --action scrape
+
+# Specific batch
+./run_in_venv.sh python main.py --action scrape --batch "Winter 2025"
 ```
 
 ### Analyze Only (Use Existing Data)
@@ -161,8 +176,11 @@ yc-demoday-batch/
 
 ### 📊 Compare Company Lists (NEW!)
 ```bash
-# Compare YC S2025 batch with companies in an HTML file
+# Compare YC batch with companies in an HTML file (default: Fall 2025)
 ./run_in_venv.sh python main.py --action diff --html-file "file:///path/to/companies.html"
+
+# Compare specific batch with HTML file
+./run_in_venv.sh python main.py --action diff --batch "Summer 2025" --html-file "file:///path/to/companies.html"
 
 # Use specific data file for comparison
 ./run_in_venv.sh python main.py --action diff --input yc_companies.csv --html-file "file:///path/to/companies.html"
@@ -229,7 +247,7 @@ research_CompanyName_YYYYMMDD/
 - **Smart Parsing**: Intelligent text extraction and categorization
 
 ### Enhanced Scraping Process
-1. **Page Navigation**: Loads the YC Summer 2025 companies page
+1. **Page Navigation**: Loads the YC Fall 2025 companies page
 2. **ENHANCED CONTENT LOADING**: Performs 5 different scrolling techniques to ensure ALL content is loaded:
    - Scroll to bottom with multiple passes
    - Scroll by viewport height (granular)
@@ -317,7 +335,7 @@ The scraper generates company data with the following structure:
 - `name`: Company name
 - `description`: Company description
 - `url`: Company profile URL on YC website
-- `batch`: YC batch information (Summer 2025)
+- `batch`: YC batch information (Fall 2025)
 - `categories`: List of company categories/tags
 - `founders`: **Enhanced founder information** with:
   - `name`: Founder's full name
@@ -349,7 +367,7 @@ The scraper generates company data with the following structure:
 
 ## 🎯 Investment Insights
 
-### Current YC Summer 2025 Batch Analysis
+### Current YC Fall 2025 Batch Analysis
 - **Total Companies**: 143+ (Enhanced capture with improved scraping)
 - **B2B Dominance**: 93 companies (~65%) - B2B remains the dominant model
 - **AI/ML Revolution**: 90 companies (~63%) leverage AI/ML technology
@@ -417,7 +435,7 @@ The scraper generates company data with the following structure:
 
 ## 📝 Notes
 
-- **🔥 Enhanced Coverage**: The scraper now captures 143+ companies from the YC Summer 2025 batch with complete summaries
+- **🔥 Enhanced Coverage**: The scraper now captures 143+ companies from the YC Fall 2025 batch with complete summaries
 - **Investment-Ready Data**: Each company includes founder LinkedIn profiles, traction metrics, and detailed business descriptions
 - **Complete Sentence Integrity**: Advanced parsing ensures no sentences are broken mid-way
 - **Timestamped Output**: All reports and charts include timestamps to prevent overwrites

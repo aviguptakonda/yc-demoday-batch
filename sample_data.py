@@ -2,13 +2,13 @@ import json
 import pandas as pd
 from datetime import datetime
 
-# Sample YC Summer 2025 companies data
+# Sample YC companies data (batch will be updated dynamically)
 sample_companies = [
     {
         "name": "TechFlow AI",
         "description": "AI-powered workflow automation platform that helps teams streamline their processes and increase productivity by 300%.",
         "url": "https://techflow.ai",
-        "batch": "Summer 2025",
+        "batch": "Fall 2025",
         "categories": ["AI/ML", "Productivity", "SaaS"],
         "founders": [
             {
@@ -31,7 +31,7 @@ sample_companies = [
         "name": "GreenEnergy Solutions",
         "description": "Revolutionary renewable energy storage technology that makes solar power accessible to every household.",
         "url": "https://greenenergy.solutions",
-        "batch": "Summer 2025",
+        "batch": "Fall 2025",
         "categories": ["Clean Energy", "Hardware", "Sustainability"],
         "founders": [
             {
@@ -48,7 +48,7 @@ sample_companies = [
         "name": "HealthSync",
         "description": "Digital health platform connecting patients with healthcare providers through AI-driven matching and telemedicine.",
         "url": "https://healthsync.com",
-        "batch": "Summer 2025",
+        "batch": "Fall 2025",
         "categories": ["Healthcare", "Telemedicine", "AI/ML"],
         "founders": [
             {
@@ -71,7 +71,7 @@ sample_companies = [
         "name": "EduTech Pro",
         "description": "Personalized learning platform using adaptive AI to create custom educational experiences for students of all ages.",
         "url": "https://edutechpro.com",
-        "batch": "Summer 2025",
+        "batch": "Fall 2025",
         "categories": ["EdTech", "AI/ML", "Education"],
         "founders": [
             {
@@ -94,7 +94,7 @@ sample_companies = [
         "name": "FinTech Secure",
         "description": "Next-generation financial security platform protecting digital assets with quantum-resistant encryption.",
         "url": "https://fintechsecure.com",
-        "batch": "Summer 2025",
+        "batch": "Fall 2025",
         "categories": ["FinTech", "Cybersecurity", "Blockchain"],
         "founders": [
             {
@@ -117,7 +117,7 @@ sample_companies = [
         "name": "BioTech Innovations",
         "description": "Cutting-edge biotechnology company developing novel therapeutics for rare diseases using CRISPR technology.",
         "url": "https://biotechinnovations.com",
-        "batch": "Summer 2025",
+        "batch": "Fall 2025",
         "categories": ["Biotech", "Healthcare", "Research"],
         "founders": [
             {
@@ -140,7 +140,7 @@ sample_companies = [
         "name": "DevTools Hub",
         "description": "Comprehensive developer tools platform that streamlines the entire software development lifecycle.",
         "url": "https://devtoolshub.com",
-        "batch": "Summer 2025",
+        "batch": "Fall 2025",
         "categories": ["Developer Tools", "SaaS", "Productivity"],
         "founders": [
             {
@@ -157,7 +157,7 @@ sample_companies = [
         "name": "Consumer Connect",
         "description": "AI-powered consumer insights platform helping brands understand and connect with their customers better.",
         "url": "https://consumerconnect.ai",
-        "batch": "Summer 2025",
+        "batch": "Fall 2025",
         "categories": ["Consumer", "AI/ML", "Analytics"],
         "founders": [
             {
@@ -180,7 +180,7 @@ sample_companies = [
         "name": "Enterprise Flow",
         "description": "Enterprise workflow automation platform designed for large organizations to optimize their operations.",
         "url": "https://enterpriseflow.com",
-        "batch": "Summer 2025",
+        "batch": "Fall 2025",
         "categories": ["Enterprise", "SaaS", "Automation"],
         "founders": [
             {
@@ -203,7 +203,7 @@ sample_companies = [
         "name": "Hardware Labs",
         "description": "Innovative hardware company developing next-generation IoT devices for smart homes and cities.",
         "url": "https://hardwarelabs.io",
-        "batch": "Summer 2025",
+        "batch": "Fall 2025",
         "categories": ["Hardware", "IoT", "Smart Cities"],
         "founders": [
             {
@@ -224,18 +224,25 @@ sample_companies = [
     }
 ]
 
-def create_sample_data():
+def create_sample_data(batch="Fall 2025"):
     """Create sample data files for testing"""
+    
+    # Update batch information in sample data
+    updated_companies = []
+    for company in sample_companies:
+        updated_company = company.copy()
+        updated_company['batch'] = batch
+        updated_companies.append(updated_company)
     
     # Save as JSON
     with open('yc_companies.json', 'w') as f:
-        json.dump(sample_companies, f, indent=2)
+        json.dump(updated_companies, f, indent=2)
     
     # Save as CSV
-    df = pd.DataFrame(sample_companies)
+    df = pd.DataFrame(updated_companies)
     df.to_csv('yc_companies.csv', index=False)
     
-    print(f"Created sample data with {len(sample_companies)} companies")
+    print(f"Created sample data with {len(updated_companies)} companies for {batch} batch")
     print("Files created: yc_companies.json, yc_companies.csv")
 
 if __name__ == "__main__":

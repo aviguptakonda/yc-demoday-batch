@@ -20,6 +20,8 @@ def main():
     parser = argparse.ArgumentParser(description='YC Demo Day Batch Monitor')
     parser.add_argument('--action', choices=['scrape', 'analyze', 'sample', 'research', 'diff', 'all'], default='all',
                        help='Action to perform: scrape data, analyze data, generate sample data, research company, diff companies, or all')
+    parser.add_argument('--batch', default='Fall 2025',
+                       help='YC batch to target (default: Fall 2025). Examples: "Fall 2025", "Summer 2025", "Winter 2025"')
     parser.add_argument('--input', default='yc_companies.csv',
                        help='Input file for analysis (default: yc_companies.csv)')
     parser.add_argument('--report', default='analysis_report.json',
@@ -35,7 +37,7 @@ def main():
     
     # Diff-specific arguments
     parser.add_argument('--html-file', type=str,
-                       help='HTML file path (file:// URL or local path) to compare against YC S2025 batch (required for diff action)')
+                       help='HTML file path (file:// URL or local path) to compare against YC batch (required for diff action)')
     parser.add_argument('--diff-output', type=str, default='company_diff_report.json',
                        help='Output file for diff report (default: company_diff_report.json)')
     
@@ -74,7 +76,7 @@ def main():
                 logger.error("HTML file path is required for diff action. Use --html-file 'path/to/file.html'")
                 sys.exit(1)
             
-            logger.info(f"Starting company comparison between YC S2025 batch and HTML file: {args.html_file}")
+            logger.info(f"Starting company comparison between YC {args.batch} batch and HTML file: {args.html_file}")
             
             # Use existing data if available, otherwise try to find latest data
             input_file = args.input
@@ -99,7 +101,7 @@ def main():
                     logger.error("No YC company data found. Please run scraper first or provide data file.")
                     sys.exit(1)
             
-            analyzer = YCAnalyzer(input_file)
+            analyzer = YCAnalyzer(input_file, batch=args.batch)
             
             if analyzer.df.empty:
                 logger.error("No data available for comparison. Please check your data file.")
@@ -113,9 +115,9 @@ def main():
             return
         
         if args.action in ['scrape', 'all']:
-            logger.info("Starting data scraping...")
+            logger.info(f"Starting data scraping for YC {args.batch} batch...")
             from yc_scraper_robust import RobustYCScraper
-            scraper = RobustYCScraper()
+            scraper = RobustYCScraper(batch=args.batch)
             asyncio.run(scraper.scrape_companies())
             if scraper.companies:
                 output_dir = scraper.save_final_data(".")
@@ -145,15 +147,15 @@ def main():
                 sys.exit(1)
 
         if args.action in ['sample', 'all']:
-            logger.info("Generating sample data...")
-            create_sample_data()
+            logger.info(f"Generating sample data for YC {args.batch} batch...")
+            create_sample_data(batch=args.batch)
             logger.info("Sample data generated successfully")
 
         if args.action in ['analyze', 'all']:
             logger.info("Starting data analysis...")
             # Use the scraper's output directory if available, otherwise create new one
             shared_dir = shared_output_dir if 'shared_output_dir' in locals() else None
-            analyzer = YCAnalyzer(args.input, shared_output_dir=shared_dir)
+            analyzer = YCAnalyzer(args.input, shared_output_dir=shared_dir, batch=args.batch)
             
             if not analyzer.df.empty:
                 analyzer.print_summary()

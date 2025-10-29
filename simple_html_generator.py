@@ -308,7 +308,7 @@ def csv_to_html_simple(csv_filename, title="Data Table"):
                             cats = cats_str[1:-1].replace("'", "").split(', ')
                             category_html = '<div class="categories">'
                             for cat in cats:
-                                if cat and cat != 'Summer 2025':
+                                if cat and cat != 'Fall 2025':
                                     category_html += f'<span class="category-tag">{cat}</span>'
                             category_html += '</div>'
                             html_content += f'                        <td>{category_html}</td>\n'
@@ -429,7 +429,7 @@ if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
         csv_file = sys.argv[1]
-        title = sys.argv[2] if len(sys.argv) > 2 else 'YC Summer 2025 Companies'
+        title = sys.argv[2] if len(sys.argv) > 2 else 'YC Fall 2025 Companies'
         csv_to_html_simple(csv_file, title)
     else:
         print("Usage: python simple_html_generator.py <csv_file> [title]") 
