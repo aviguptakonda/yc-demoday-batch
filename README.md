@@ -189,6 +189,32 @@ yc-demoday-batch/
 ./run_in_venv.sh python main.py --action diff --html-file "file:///path/to/companies.html" --diff-output custom_diff.json
 ```
 
+### 📋 Compare with Company List (NEW!)
+```bash
+# Compare scraped data with a text file of company names
+./run_in_venv.sh python main.py --action compare-list --company-list companies.txt
+
+# Use specific CSV file for comparison
+./run_in_venv.sh python main.py --action compare-list --input yc_companies.csv --company-list companies.txt
+
+# Save detailed comparison results to JSON
+./run_in_venv.sh python main.py --action compare-list --company-list companies.txt --comparison-output results.json
+```
+
+**Company List File Format**: Text file with one company name per line
+```
+Absurd
+AirCaps
+Aleph Lab
+Alt-X
+...
+```
+
+**Output**: 
+- Console summary with match statistics
+- `missing_companies_YYYYMMDD_HHMMSS.txt` - List of companies not found in scraped data
+- Optional JSON file with detailed comparison results
+
 ### Custom Analysis
 ```bash
 ./run_in_venv.sh python main.py --action analyze --input your_data.csv --report custom_report.json --charts-dir custom_charts

@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser(description='YC Demo Day Batch Monitor')
-    parser.add_argument('--action', choices=['scrape', 'analyze', 'sample', 'research', 'diff', 'all'], default='all',
-                       help='Action to perform: scrape data, analyze data, generate sample data, research company, diff companies, or all')
+    parser.add_argument('--action', choices=['scrape', 'analyze', 'sample', 'research', 'diff', 'compare-list', 'all'], default='all',
+                       help='Action to perform: scrape data, analyze data, generate sample data, research company, diff companies, compare-list, or all')
     parser.add_argument('--batch', default='Fall 2025',
                        help='YC batch to target (default: Fall 2025). Examples: "Fall 2025", "Summer 2025", "Winter 2025"')
     parser.add_argument('--input', default='yc_companies.csv',
@@ -40,6 +40,12 @@ def main():
                        help='HTML file path (file:// URL or local path) to compare against YC batch (required for diff action)')
     parser.add_argument('--diff-output', type=str, default='company_diff_report.json',
                        help='Output file for diff report (default: company_diff_report.json)')
+    
+    # Compare-list-specific arguments
+    parser.add_argument('--company-list', type=str,
+                       help='Text file with company names to compare (one per line) (required for compare-list action)')
+    parser.add_argument('--comparison-output', type=str,
+                       help='Output file for comparison results JSON (optional for compare-list action)')
     
     args = parser.parse_args()
     
@@ -68,6 +74,51 @@ def main():
             logger.info(f"📊 JSON Report: {json_report_path}")
             logger.info(f"🌐 HTML Report: {html_path}")
             logger.info(f"🎯 Investment Recommendation: {research_data['insights']['recommendation']}")
+            return
+        
+        # Handle compare-list action
+        if args.action == 'compare-list':
+            if not args.company_list:
+                logger.error("Company list file is required for compare-list action. Use --company-list 'path/to/companies.txt'")
+                sys.exit(1)
+            
+            logger.info(f"Starting company list comparison with: {args.company_list}")
+            
+            # Use existing data if available, otherwise try to find latest data
+            input_file = args.input
+            if not os.path.exists(input_file):
+                # Try to find the latest CSV file from output directories
+                import glob
+                output_dirs = glob.glob("output_*")
+                if output_dirs:
+                    latest_dir = max(output_dirs, key=os.path.getctime)
+                    scraper_data_dir = os.path.join(latest_dir, "scraper", "data")
+                    csv_files = glob.glob(os.path.join(scraper_data_dir, "*.csv"))
+                    # Prefer final CSVs over progress CSVs
+                    final_csvs = [p for p in csv_files if "_progress" not in p]
+                    preferred_list = final_csvs if final_csvs else csv_files
+                    if preferred_list:
+                        input_file = max(preferred_list, key=os.path.getctime)
+                        logger.info(f"Using latest scraped data: {input_file}")
+                    else:
+                        logger.error("No YC company data found. Please run scraper first or provide data file.")
+                        sys.exit(1)
+                else:
+                    logger.error("No YC company data found. Please run scraper first or provide data file.")
+                    sys.exit(1)
+            
+            from company_list_comparer import compare_from_file
+            results = compare_from_file(input_file, args.company_list, args.comparison_output)
+            
+            logger.info("✅ Company list comparison completed!")
+            if results['missing_from_scrape']:
+                logger.info(f"⚠️  Found {len(results['missing_from_scrape'])} missing companies")
+                logger.info(f"📄 Missing companies saved to: {results['missing_companies_file']}")
+            else:
+                logger.info("✅ All companies from your list were successfully scraped!")
+            
+            if args.comparison_output:
+                logger.info(f"📊 Full comparison results saved to: {args.comparison_output}")
             return
         
         # Handle diff action
